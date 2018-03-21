@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #
 # written by ingo randolf - 2018
 # http://ingorandolf.info
@@ -6,9 +8,6 @@
 # http://kobakant.at/KOBA/
 #
 #
-
-#!/usr/bin/env python
-
 
 import os
 import time
