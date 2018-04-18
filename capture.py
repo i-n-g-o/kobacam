@@ -16,6 +16,7 @@ import picamera
 import BaseHTTPServer
 import os.path
 import sys
+import traceback
 
 from threading import Thread
 from time import sleep
@@ -91,19 +92,19 @@ try :
 
         # Open a browser at the authentication URL. Do this however
         # you want, as long as the user visits that URL.
-        authorize_url = flickr.auth_url(perms='write')
+        authorize_url = flickr.auth_url(perms=u'write')
         print "authorize_url: " + authorize_url
-        #webbrowser.open_new_tab(authorize_url)
 
         # Get the verifier code from the user. Do this however you
         # want, as long as the user gives the application the code.
-        verifier = str(input('Verifier code: '))
+        verifier = unicode(str(raw_input('Verifier code: ')).strip(), "utf-8")
 
         # Trade the request token for an access token
-        flickr.get_access_token(verifier)
+        flickr.get_access_token(verifier.strip())
 
 except Exception:
     print "error setting up flickr"
+    print(traceback.format_exc())
     do_flickr = False
 
 
@@ -114,8 +115,8 @@ HOST_NAME = ''
 PORT_NUMBER_DEFAULT = 8000 # Maybe set this to 9000.
 
 dothread = True
-sleep_time = configParser.get('general', 'sleep_time') if configParser.has_option("general", "sleep_time") else 1
-capture_interval = configParser.get('general', 'capture_interval') if configParser.has_option("general", "capture_interval") else 3600
+sleep_time = float(configParser.get('general', 'sleep_time')) if configParser.has_option("general", "sleep_time") else 1.0
+capture_interval = int(configParser.get('general', 'capture_interval')) if configParser.has_option("general", "capture_interval") else 3600
 stopped_for_today = False;
 path_prefix = ""
 
@@ -299,7 +300,7 @@ if __name__ == '__main__':
     if os.path.isfile("stills"):
         print "error: we need folder 'stills', but file 'stills' exists"
         logging.debug("error: we need folder 'stills', but file 'stills' exists")
-        os.exit(-1)
+        sys.exit(-1)
 
 
     if not os.path.isdir("stills"):
