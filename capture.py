@@ -26,7 +26,7 @@ import grp
 
 import logging
 import PythonMagick
-import flickrapi
+import flickrapi # sudo pip install flickrapi
 import ConfigParser
 
 
@@ -81,6 +81,12 @@ camera.crop = (0.0, 0.0, 1.0, 1.0)
 do_flickr = True
 api_key = configParser.get('flickr', 'api_key')
 api_secret = configParser.get('flickr', 'api_secret')
+
+if not api_key:
+    print "please add api-key to use flickr-upload"
+if not api_secret:
+    print "please add api-secret to use flickr-upload"
+
 flickr = flickrapi.FlickrAPI(api_key, api_secret)
 
 try :
