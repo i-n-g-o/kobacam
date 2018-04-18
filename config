@@ -1,0 +1,8 @@
+[general]
+user = pi
+logfile = capture.log
+sleep_time = 1
+capture_interval = 3600
+[flickr]
+api_key =
+api_secret = 

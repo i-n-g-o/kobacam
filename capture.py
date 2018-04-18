@@ -25,16 +25,28 @@ import grp
 
 import logging
 import PythonMagick
+import flickrapi
+import ConfigParser
 
 
-uid = pwd.getpwnam("pi").pw_uid
-gid = grp.getgrnam("pi").gr_gid
+#############################
+## config
+#############################
+configParser = ConfigParser.RawConfigParser()
+configFilePath = r'config'
+configParser.read(configFilePath)
+
+
+username = configParser.get('general', 'user') if configParser.has_option("general", "user") else 'pi'
+uid = pwd.getpwnam(username).pw_uid
+gid = grp.getgrnam(username).gr_gid
 
 
 #############################
 ## logfile
 #############################
-logging.basicConfig(filename='capture.log',level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
+logfile = configParser.get('general', 'logfile') if configParser.has_option("general", "logfile") else 'capture.log'
+logging.basicConfig(filename=logfile,level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
 
 
 #############################
@@ -63,14 +75,47 @@ camera.crop = (0.0, 0.0, 1.0, 1.0)
 
 
 #############################
+## setup flickr
+#############################
+do_flickr = True
+api_key = configParser.get('flickr', 'api_key')
+api_secret = configParser.get('flickr', 'api_secret')
+flickr = flickrapi.FlickrAPI(api_key, api_secret)
+
+try :
+    # Only do this if we don't have a valid token already
+    if not flickr.token_valid(perms='write'):
+
+        # Get a request token
+        flickr.get_request_token(oauth_callback='oob')
+
+        # Open a browser at the authentication URL. Do this however
+        # you want, as long as the user visits that URL.
+        authorize_url = flickr.auth_url(perms='write')
+        print "authorize_url: " + authorize_url
+        #webbrowser.open_new_tab(authorize_url)
+
+        # Get the verifier code from the user. Do this however you
+        # want, as long as the user gives the application the code.
+        verifier = str(input('Verifier code: '))
+
+        # Trade the request token for an access token
+        flickr.get_access_token(verifier)
+
+except Exception:
+    print "error setting up flickr"
+    do_flickr = False
+
+
+#############################
 ## setup webserver
 #############################
 HOST_NAME = ''
 PORT_NUMBER_DEFAULT = 8000 # Maybe set this to 9000.
 
 dothread = True
-sleep_time = 1 # seconds
-capture_interval = 3600 # 60 minutes
+sleep_time = configParser.get('general', 'sleep_time') if configParser.has_option("general", "sleep_time") else 1
+capture_interval = configParser.get('general', 'capture_interval') if configParser.has_option("general", "capture_interval") else 3600
 stopped_for_today = False;
 path_prefix = ""
 
@@ -115,6 +160,16 @@ def postProcess(filename, filenameout):
     image.write(filenameout)
 
 
+#############################
+## upload image
+def upload_image(fn, _title):
+    if not do_flickr:
+        return
+
+    logging.info("uploading image to flickr");
+    rsp = flickr.upload(filename = fn, title = _title, format = "rest")
+    logging.info(rsp);
+
 
 #############################
 ## capture one image
@@ -148,6 +203,9 @@ def capture_image():
     os.chown(absfilename, uid, gid)
     os.chown(absfilenameout, uid, gid)
     os.chown(path_prefix + "stills/latest.jpg", uid, gid)
+
+    if do_flickr:
+        upload_image(absfilenameout, filenameout)
 
     return filenameout
 
