@@ -1,0 +1,10 @@
+[Unit]
+Description=kobacam
+
+[Service]
+Type=simple
+ExecStart=/home/pi/kobacam/capture.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
